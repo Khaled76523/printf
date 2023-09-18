@@ -1,47 +1,50 @@
-#include <stdarg.h>
-#include"main.h"
+#include "main.h"
+#include <limits.h>
+#include <stdio.h>
+
 /**
- * _printf - function to handle s c %
- * @format: the input argument we recived
- * Return: the output printed
-**/
+ * _printf - produces output according to a format
+ * @format: format string containing the characters and the specifiers
+ * Description: this function will call the get_print() function that will
+ * determine which printing function to call depending on the conversion
+ * specifiers contained into fmt
+ * Return: length of the formatted output string
+ */
 int _printf(const char *format, ...)
 {
-	int count = 0, i;
-	va_list data;
+	int (*pfunc)(va_list, flags_t *);
+	const char *p;
+	va_list arguments;
+	flags_t flags = {0, 0, 0};
 
-	va_start(data, format);
-	for (i = 0; format[i] != '\0'; )
+	register int count = 0;
+
+	va_start(arguments, format);
+	if (!format || (format[0] == '%' && !format[1]))
+		return (-1);
+	if (format[0] == '%' && format[1] == ' ' && !format[2])
+		return (-1);
+	for (p = format; *p; p++)
 	{
-/* count the number of characters */
-/* print to the screen each character counted */
-
-		if (format[i] != '%')
+		if (*p == '%')
 		{
-			count += _putchar(format[i]);
-			i++;
-		}
-		else if (format[i] == '%' && format[i + 1] != ' ')
-		{
-			switch (format[i + 1])
+			p++;
+			if (*p == '%')
 			{
-				case 'c':
-/* print the character from the va_arguments */
-					count += _putchar(va_arg(data, int));
-					break;
-				case 's':
-					count += print_string(va_arg(data, char *));
-					break;
-				case '%':
-/* print the character from the va_arguments */
-					count += _putchar('%');
-					break;
-				default:
-					break;
+				count += _putchar('%');
+				continue;
 			}
-			i += 2;
-		}
+			while (get_flag(*p, &flags))
+				p++;
+			pfunc = get_print(*p);
+			count += (pfunc)
+				? pfunc(arguments, &flags)
+				: _printf("%%%c", *p);
+		} else
+			count += _putchar(*p);
 	}
-	va_end(data);
+	_putchar(-1);
+	va_end(arguments);
 	return (count);
+
 }
